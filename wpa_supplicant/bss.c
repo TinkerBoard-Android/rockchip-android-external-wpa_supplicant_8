@@ -17,6 +17,8 @@
 #include "notify.h"
 #include "scan.h"
 #include "bss.h"
+#include<sys/time.h>
+#include<sys/sysinfo.h>
 
 
 #define WPA_BSS_FREQ_CHANGED_FLAG	BIT(0)
@@ -29,6 +31,25 @@
 #define WPA_BSS_RATES_CHANGED_FLAG	BIT(7)
 #define WPA_BSS_IES_CHANGED_FLAG	BIT(8)
 
+extern char wifi_chip_type[];
+
+unsigned long long get_now_time(void)
+{
+    static struct timeval open_time;
+    struct timeval now_time;
+    struct sysinfo system_open_time;
+    static int flag = 0;
+    if(flag == 0) {
+        gettimeofday(&open_time,NULL);
+        sysinfo(&system_open_time);
+        open_time.tv_sec -= system_open_time.uptime;
+        flag++;
+    }
+    gettimeofday(&now_time,NULL);
+    now_time.tv_sec -= open_time.tv_sec;
+    now_time.tv_usec -= open_time.tv_usec;
+    return  ((unsigned long long)now_time.tv_sec*1000*1000 + now_time.tv_usec);
+}
 
 static void wpa_bss_set_hessid(struct wpa_bss *bss)
 {
@@ -287,6 +308,9 @@ static void calculate_update_time(const struct os_reltime *fetch_time,
 static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src,
 			     struct os_reltime *fetch_time)
 {
+	if (!strcmp(wifi_chip_type, "ESP8089") || !strcmp(wifi_chip_type, "SSV6051")) {
+		src->tsf = get_now_time();
+	}
 	dst->flags = src->flags;
 	os_memcpy(dst->bssid, src->bssid, ETH_ALEN);
 	dst->freq = src->freq;

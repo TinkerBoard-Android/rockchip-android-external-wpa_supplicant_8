@@ -60,6 +60,9 @@ static int wpa_supplicant_global_iface_interfaces(struct wpa_global *global,
 static int * freq_range_to_channel_list(struct wpa_supplicant *wpa_s,
 					char *val);
 
+
+extern char wifi_chip_type[];
+
 static int set_bssid_filter(struct wpa_supplicant *wpa_s, char *val)
 {
 	char *pos;
@@ -7543,12 +7546,17 @@ static void wpas_ctrl_scan(struct wpa_supplicant *wpa_s, char *params,
 		wpa_s->ssids_from_scan_req = NULL;
 	}
 
-	if (scan_only)
-		scan_res_handler = scan_only_handler;
-	else if (wpa_s->scan_res_handler == scan_only_handler)
-		scan_res_handler = NULL;
-	else
+	if (!strcmp(wifi_chip_type, "SSV6051")){
 		scan_res_handler = wpa_s->scan_res_handler;
+		wpa_printf(MSG_INFO, "ssv6051 not scan only");
+	 } else{
+		if (scan_only)
+			scan_res_handler = scan_only_handler;
+		else if (wpa_s->scan_res_handler == scan_only_handler)
+			scan_res_handler = NULL;
+		else
+			scan_res_handler = wpa_s->scan_res_handler;
+	}
 
 	if (!wpa_s->sched_scanning && !wpa_s->scanning &&
 	    ((wpa_s->wpa_state <= WPA_SCANNING) ||

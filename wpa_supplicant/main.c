@@ -178,6 +178,8 @@ static int wpa_supplicant_init_match(struct wpa_global *global)
 #endif /* CONFIG_MATCH_IFACE */
 
 
+char wifi_chip_type[64]={0};
+extern int check_wifi_chip_type_string(char *type);
 int main(int argc, char *argv[])
 {
 	int c, i;
@@ -347,6 +349,8 @@ int main(int argc, char *argv[])
 	} else {
 		wpa_printf(MSG_INFO, "Successfully initialized "
 			   "wpa_supplicant");
+		if (wifi_chip_type[0] == 0)
+			check_wifi_chip_type_string(wifi_chip_type);
 	}
 
 	if (fst_global_init()) {

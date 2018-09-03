@@ -412,7 +412,7 @@ out:
 #define REALTEK_MODULE_NAME "[realtek]"
 #define SSV_MODULE_NAME "[ssv]"
 #define ESP_MODULE_NAME "[esp]"
-static char wifi_type[64] = {0};
+char wifi_type[64] = {0};
 extern int check_wifi_chip_type_string(char *type);
 
 int read_wpa_param_config(char *module_name, char *file_path) {

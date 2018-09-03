@@ -7922,7 +7922,7 @@ static int nl80211_set_power_save(struct i802_bss *bss, int enabled)
 	return send_and_recv_msgs(bss->drv, msg, NULL, NULL);
 }
 
-
+extern char wifi_type[];
 static int nl80211_set_p2p_powersave(void *priv, int legacy_ps, int opp_ps,
 				     int ctwindow)
 {
@@ -7930,6 +7930,9 @@ static int nl80211_set_p2p_powersave(void *priv, int legacy_ps, int opp_ps,
 
 	wpa_printf(MSG_DEBUG, "nl80211: set_p2p_powersave (legacy_ps=%d "
 		   "opp_ps=%d ctwindow=%d)", legacy_ps, opp_ps, ctwindow);
+
+	if (0 == strncmp(wifi_type, "SSV", 3))
+		return 0;
 
 	if (opp_ps != -1 || ctwindow != -1) {
 #ifdef ANDROID_P2P

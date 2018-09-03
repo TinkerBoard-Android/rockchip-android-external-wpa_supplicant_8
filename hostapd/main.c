@@ -635,6 +635,8 @@ static void hostapd_periodic(void *eloop_ctx, void *timeout_ctx)
 	hostapd_for_each_interface(interfaces, hostapd_periodic_call, NULL);
 }
 
+char wifi_type[64] = {0};
+extern int check_wifi_chip_type_string(char *type);
 
 int main(int argc, char *argv[])
 {
@@ -653,6 +655,10 @@ int main(int argc, char *argv[])
 	int start_ifaces_in_sync = 0;
 	char **if_names = NULL;
 	size_t if_names_size = 0;
+
+	if (wifi_type[0] == 0) {
+		check_wifi_chip_type_string(wifi_type);
+	}
 
 	if (os_program_init())
 		return -1;

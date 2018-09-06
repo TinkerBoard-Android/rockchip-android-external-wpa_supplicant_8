@@ -5191,6 +5191,11 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s,
 		wpa_s->confanother = os_rel2abs_path(iface->confanother);
 		wpa_config_read(wpa_s->confanother, wpa_s->conf);
 
+		if (wpa_s->conf->update_config &&
+		    wpa_config_write(wpa_s->confname, wpa_s->conf)) {
+			wpa_printf(MSG_DEBUG, "WPS: Failed to update "
+				   "configuration");
+                }
 		/*
 		 * Override ctrl_interface and driver_param if set on command
 		 * line.

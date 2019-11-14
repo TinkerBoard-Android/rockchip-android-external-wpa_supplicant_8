@@ -8,6 +8,7 @@
 
 #include "includes.h"
 
+#include <cutils/properties.h>
 #include "common.h"
 #include "eapol_supp/eapol_supp_sm.h"
 #include "rsn_supp/wpa.h"
@@ -2991,6 +2992,8 @@ static void wpa_supplicant_event_disassoc(struct wpa_supplicant *wpa_s,
 			" reason=%d%s",
 			MAC2STR(bssid), reason_code,
 			locally_generated ? " locally_generated=1" : "");
+		wpa_msg(wpa_s, MSG_INFO, "setprop vendor.wifi.state disconnected");
+		property_set("vendor.wifi.state", "disconnected");
 	}
 }
 

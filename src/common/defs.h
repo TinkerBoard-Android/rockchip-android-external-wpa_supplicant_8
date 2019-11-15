@@ -341,6 +341,16 @@ enum mfp_options {
 #define MGMT_FRAME_PROTECTION_DEFAULT 3
 
 /**
+  * enum wifi type
+  */
+enum wifi_tpye {
+	REALTEK_WIFI = 1,
+	BROADCOM_WIFI,
+	SSV_WIFI,
+	ESP_WIFI,
+	RK912_WIFI,
+};
+/**
  * enum hostapd_hw_mode - Hardware mode
  */
 enum hostapd_hw_mode {
@@ -349,6 +359,7 @@ enum hostapd_hw_mode {
 	HOSTAPD_MODE_IEEE80211A,
 	HOSTAPD_MODE_IEEE80211AD,
 	HOSTAPD_MODE_IEEE80211ANY,
+	HOSTAPD_MODE_IEEE80211AG, /*add for realtek*/
 	NUM_HOSTAPD_MODES
 };
 

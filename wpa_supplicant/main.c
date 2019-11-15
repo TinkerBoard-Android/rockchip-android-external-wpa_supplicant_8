@@ -412,8 +412,6 @@ out:
 #define REALTEK_MODULE_NAME "[realtek]"
 #define SSV_MODULE_NAME "[ssv]"
 #define ESP_MODULE_NAME "[esp]"
-static char wifi_type[64] = {0};
-extern int check_wifi_chip_type_string(char *type);
 
 int read_wpa_param_config(char *module_name, char *file_path) {
 	char *wpa_param[50] = {0};
@@ -473,27 +471,22 @@ int main(int argc, char *argv[])
 
 	wpa_printf(MSG_INFO,"argc = %d\n",argc);
 	if(argc == 2) {
-		if (wifi_type[0] == 0) {
-			check_wifi_chip_type_string(wifi_type);
-		}
-		wpa_printf(MSG_INFO,"Current wifi chip is %s\n",wifi_type);
-		if (0 == strncmp(wifi_type, "RTL", 3)) {
+		if (check_wifi_chip_type() == REALTEK_WIFI) {
 			wpa_printf(MSG_INFO,"Start rtl_wpa_supplicant\n");
 			ret = read_wpa_param_config(REALTEK_MODULE_NAME,argv[1]);
-		} else if (0 == strncmp(wifi_type, "AP", 2)) {
+		} else if (check_wifi_chip_type() == BROADCOM_WIFI) {
 			wpa_printf(MSG_INFO,"Start bcm_wpa_supplicant\n");
 			ret = read_wpa_param_config(BROADCOM_MODULE_NAME,argv[1]);
-		} else if (0 == strncmp(wifi_type, "SSV", 3) ||
-			   0 == strncmp(wifi_type, "RK912", 5)) {
+		} else if (check_wifi_chip_type() == RK912_WIFI ||
+				check_wifi_chip_type() == SSV_WIFI) {
 			wpa_printf(MSG_INFO,"Start ssv_wpa_supplicant\n");
 			ret = read_wpa_param_config(SSV_MODULE_NAME,argv[1]);
-		} else if (0 == strncmp(wifi_type, "ESP", 3)) {
+		} else if (check_wifi_chip_type() == ESP_WIFI) {
 			wpa_printf(MSG_INFO,"Start esp_wpa_supplicant\n");
 			ret = read_wpa_param_config(ESP_MODULE_NAME,argv[1]);
 		} else {
 			wpa_printf(MSG_INFO,"Start wpa_supplicant\n");
-			sprintf(module_type,"[%s]",wifi_type);
-			ret = read_wpa_param_config(module_type,argv[1]);
+			ret = read_wpa_param_config(BROADCOM_MODULE_NAME,argv[1]);
 		}
 	} else {
 		wpa_printf(MSG_INFO,"Start wpa_supplicant\n");

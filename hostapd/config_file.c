@@ -31,7 +31,6 @@ hostapd_parse_radius_attr(const char *value);
 #endif /* EAP_SERVER */
 #endif /* CONFIG_NO_RADIUS */
 
-
 #ifndef CONFIG_NO_VLAN
 static int hostapd_config_read_vlan_file(struct hostapd_bss_config *bss,
 					 const char *fname)
@@ -3084,11 +3083,15 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 			conf->hw_mode = HOSTAPD_MODE_IEEE80211G;
 		else if (os_strcmp(pos, "ad") == 0)
 			conf->hw_mode = HOSTAPD_MODE_IEEE80211AD;
-		else if (os_strcmp(pos, "any") == 0)
-			conf->hw_mode = HOSTAPD_MODE_IEEE80211ANY;
+		else if (os_strcmp(pos, "any") == 0) {
+			if (check_wifi_chip_type() == REALTEK_WIFI)
+				conf->hw_mode = HOSTAPD_MODE_IEEE80211AG;
+			else
+				conf->hw_mode = HOSTAPD_MODE_IEEE80211ANY;
+		}
 		else {
 			wpa_printf(MSG_ERROR, "Line %d: unknown hw_mode '%s'",
-				   line, pos);
+				line, pos);
 			return 1;
 		}
 	} else if (os_strcmp(buf, "wps_rf_bands") == 0) {

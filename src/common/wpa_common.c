@@ -2600,3 +2600,26 @@ int fils_domain_name_hash(const char *domain, u8 *hash)
 	return 0;
 }
 #endif /* CONFIG_FILS */
+
+static char wifi_type[64] = {0};
+extern int check_wifi_chip_type_string(char *type);
+int check_wifi_chip_type()
+{
+	int type;
+	if (wifi_type[0] == 0) {
+		check_wifi_chip_type_string(wifi_type);
+		wpa_printf(MSG_INFO,"Current wifi chip is %s\n",wifi_type);
+	}
+	if (0 == strncmp(wifi_type, "RTL", 3)) {
+		type = REALTEK_WIFI;
+	} else if (0 == strncmp(wifi_type, "SSV", 3)) {
+		type = SSV_WIFI;
+	} else if (0 == strncmp(wifi_type, "ESP", 3)) {
+		type = ESP_WIFI;
+	} else if (0 == strncmp(wifi_type, "RK912", 5)) {
+		type = RK912_WIFI;
+	} else {
+		type = BROADCOM_WIFI;
+	}
+		return type;
+}

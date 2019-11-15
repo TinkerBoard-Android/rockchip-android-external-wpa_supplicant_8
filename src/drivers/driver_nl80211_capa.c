@@ -1682,6 +1682,44 @@ static int phy_info_handler(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
+/* add for realtek */
+static int
+wpa_driver_nl80211_hw_mode_append(struct hostapd_hw_modes *mode,
+				  struct hostapd_hw_modes *mode11)
+{
+	struct hostapd_channel_data *new_channels;
+	int *new_rates;
+
+	if ((mode11->num_channels == 0) || (mode11->num_rates == 0)) {
+		wpa_printf(MSG_ERROR, "%s: num_channels or num_rates is 0", __func__);
+		return -1;
+	}
+
+	new_channels = os_realloc_array(mode->channels,
+					mode->num_channels + mode11->num_channels,
+					sizeof(struct hostapd_channel_data));
+	if (new_channels == NULL)
+		return -1;
+
+	memcpy(&new_channels[mode->num_channels], mode11->channels,
+		mode11->num_channels * sizeof(struct hostapd_channel_data));
+	mode->channels = new_channels;
+	mode->num_channels += mode11->num_channels;
+
+	new_rates = os_realloc_array(mode->rates, mode->num_rates + mode11->num_rates,
+				     sizeof(int));
+	if ( new_rates == NULL) {
+		os_free(mode->channels);
+		return -1;
+	}
+
+	memcpy(&new_rates[mode->num_rates], mode11->rates,
+		mode11->num_rates * sizeof(int));
+	mode->rates = new_rates;
+	mode->num_rates += mode11->num_rates;
+
+	return 0;
+}
 
 static struct hostapd_hw_modes *
 wpa_driver_nl80211_postprocess_modes(struct hostapd_hw_modes *modes,
@@ -1690,6 +1728,9 @@ wpa_driver_nl80211_postprocess_modes(struct hostapd_hw_modes *modes,
 	u16 m;
 	struct hostapd_hw_modes *mode11g = NULL, *nmodes, *mode;
 	int i, mode11g_idx = -1;
+	/* add for realtek */
+	struct hostapd_hw_modes *mode11a = NULL;
+	int mode11a_idx = -1;
 
 	/* heuristic to set up modes */
 	for (m = 0; m < *num_modes; m++) {
@@ -1717,6 +1758,10 @@ wpa_driver_nl80211_postprocess_modes(struct hostapd_hw_modes *modes,
 			return modes; /* 802.11b already included */
 		if (modes[m].mode == HOSTAPD_MODE_IEEE80211G)
 			mode11g_idx = m;
+		if (check_wifi_chip_type() == REALTEK_WIFI) {
+			if (modes[m].mode == HOSTAPD_MODE_IEEE80211A)
+				mode11a_idx = m;
+		}
 	}
 
 	if (mode11g_idx < 0)
@@ -1771,6 +1816,37 @@ wpa_driver_nl80211_postprocess_modes(struct hostapd_hw_modes *modes,
 	wpa_printf(MSG_DEBUG, "nl80211: Added 802.11b mode based on 802.11g "
 		   "information");
 
+	if (check_wifi_chip_type() == REALTEK_WIFI) {
+	if (mode11a_idx < 0) {
+		wpa_printf(MSG_ERROR, "nl80211: NO 5G band");
+		return modes; /* 5GHz band not supported at all */
+	}
+
+	/* add AG mode if 2.4GHz and 5GHz are all supported */
+	nmodes = os_realloc_array(modes, *num_modes + 1, sizeof(*nmodes));
+	if (nmodes == NULL)
+		return modes; /* Could not add 802.11a + 802.11g mode */
+
+	mode = &nmodes[*num_modes];
+	os_memset(mode, 0, sizeof(*mode));
+	(*num_modes)++;
+	modes = nmodes;
+	mode11g = &modes[mode11g_idx];
+	mode11a = &modes[mode11a_idx];
+
+	mode->mode = HOSTAPD_MODE_IEEE80211AG;
+	mode->num_channels = 0;
+	mode->num_rates = 0;
+        if ((wpa_driver_nl80211_hw_mode_append(mode, mode11g) < 0) ||
+	    (wpa_driver_nl80211_hw_mode_append(mode, mode11a) < 0)) {
+		wpa_printf(MSG_ERROR, "nl80211: Added 802.11a+g failed");
+		(*num_modes)--;
+		return modes; /* Could not add 802.11g mode */
+	}
+
+	wpa_printf(MSG_INFO, "nl80211: Added 802.11a+g mode based on 802.11g/a "
+		   "information");
+	}
 	return modes;
 }
 

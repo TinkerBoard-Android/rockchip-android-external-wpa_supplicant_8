@@ -819,6 +819,33 @@ int hostapd_acs_completed(struct hostapd_iface *iface, int err)
 			hostapd_hw_get_freq(iface->bss[0],
 					    iface->conf->channel),
 			iface->conf->channel);
+		/*add for realtek */
+		if (check_wifi_chip_type() == REALTEK_WIFI) {
+		if (iface->current_mode->mode == HOSTAPD_MODE_IEEE80211AG) {
+			int i;
+			enum hostapd_hw_mode target_mode;
+
+			if (iface->conf->channel<=14)
+				target_mode = HOSTAPD_MODE_IEEE80211G;
+			else
+				target_mode = HOSTAPD_MODE_IEEE80211A;
+
+			for (i = 0; i < iface->num_hw_features; i++) {
+				struct hostapd_hw_modes *mode = &iface->hw_features[i];
+				if (mode->mode == target_mode) {
+					iface->current_mode = mode;
+					break;
+				}
+			}
+
+			if (iface->current_mode->mode == HOSTAPD_MODE_IEEE80211AG) {
+				wpa_printf(MSG_ERROR, "ACS error - can not decide A band or G band");
+				wpa_msg(iface->bss[0]->msg_ctx, MSG_INFO, ACS_EVENT_FAILED);
+				hostapd_notify_bad_chans(iface);
+				goto out;
+			}
+		}
+		}
 		break;
 	case HOSTAPD_CHAN_ACS:
 		wpa_printf(MSG_ERROR, "ACS error - reported complete, but no result available");

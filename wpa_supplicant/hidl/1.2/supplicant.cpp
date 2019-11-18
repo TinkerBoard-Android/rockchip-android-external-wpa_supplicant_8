@@ -25,10 +25,14 @@ constexpr char kStaIfaceConfPath[] =
     "/data/vendor/wifi/wpa/wpa_supplicant.conf";
 constexpr char kStaIfaceConfOverlayPath[] =
     "/vendor/etc/wifi/wpa_supplicant_overlay.conf";
+constexpr char kBcmStaIfaceConfOverlayPath[] =
+    "/vendor/etc/wifi/wpa_supplicant_bcm.conf";
 constexpr char kP2pIfaceConfPath[] =
     "/data/vendor/wifi/wpa/p2p_supplicant.conf";
 constexpr char kP2pIfaceConfOverlayPath[] =
     "/vendor/etc/wifi/p2p_supplicant_overlay.conf";
+constexpr char kSsvP2pIfaceConfOverlayPath[] =
+    "/vendor/etc/wifi/p2p_supplicant_ssv.conf";
 // Migrate conf files for existing devices.
 constexpr char kSystemTemplateConfPath[] =
     "/system/etc/wifi/wpa_supplicant.conf";
@@ -37,6 +41,11 @@ constexpr char kVendorTemplateConfPath[] =
 constexpr char kOldStaIfaceConfPath[] = "/data/misc/wifi/wpa_supplicant.conf";
 constexpr char kOldP2pIfaceConfPath[] = "/data/misc/wifi/p2p_supplicant.conf";
 constexpr mode_t kConfigFileMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+
+extern "C" int check_wifi_chip_type_string(char *type);
+static char wifi_type[64] = {0};
+static char wpa_conf_overlay_path[64];
+static char p2p_conf_overlay_path[64];
 
 int copyFile(
     const std::string& src_file_path, const std::string& dest_file_path)
@@ -284,9 +293,18 @@ Supplicant::addInterfaceInternal(const IfaceInfo& iface_info)
 				{}};
 		}
 		iface_params.confname = kP2pIfaceConfPath;
-		int ret = access(kP2pIfaceConfOverlayPath, R_OK);
+		if (wifi_type[0] == 0) {
+			check_wifi_chip_type_string(wifi_type);
+		}
+		if (0 == strncmp(wifi_type, "SSV", 3)) {
+			strcpy(p2p_conf_overlay_path, kSsvP2pIfaceConfOverlayPath);
+		} else {
+			strcpy(p2p_conf_overlay_path, kP2pIfaceConfOverlayPath);
+		}
+		wpa_printf(MSG_INFO, "Use %s", p2p_conf_overlay_path);
+		int ret = access(p2p_conf_overlay_path, R_OK);
 		if (ret == 0) {
-			iface_params.confanother = kP2pIfaceConfOverlayPath;
+			iface_params.confanother = p2p_conf_overlay_path;
 		}
 	} else {
 		if (ensureConfigFileExists(
@@ -299,9 +317,18 @@ Supplicant::addInterfaceInternal(const IfaceInfo& iface_info)
 				{}};
 		}
 		iface_params.confname = kStaIfaceConfPath;
+		if (wifi_type[0] == 0) {
+			check_wifi_chip_type_string(wifi_type);
+		}
+		if (0 == strncmp(wifi_type, "AP", 2)) {
+			strcpy(wpa_conf_overlay_path, kBcmStaIfaceConfOverlayPath);
+		} else {
+			strcpy(wpa_conf_overlay_path, kStaIfaceConfOverlayPath);
+		}
+		wpa_printf(MSG_INFO, "Use %s", wpa_conf_overlay_path);
 		int ret = access(kStaIfaceConfOverlayPath, R_OK);
 		if (ret == 0) {
-			iface_params.confanother = kStaIfaceConfOverlayPath;
+			iface_params.confanother = wpa_conf_overlay_path;
 		}
 	}
 	iface_params.ifname = iface_info.name.c_str();
